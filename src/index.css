@@ -1,1 +1,56 @@
 @import 'tailwindcss';
+
+@keyframes emoji-float {
+  0% {
+    transform: translate3d(var(--start), 0, 0);
+    opacity: 0;
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  82% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate3d(var(--start), -62vh, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes emoji-sway {
+  0% {
+    transform: translateX(calc(var(--sway) * -1)) scale(0.98);
+  }
+
+  100% {
+    transform: translateX(var(--sway)) scale(1.03);
+  }
+}
+
+.launch-field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.launched-emoji {
+  animation: emoji-float 1.8s linear forwards;
+  bottom: 7rem;
+  font-size: clamp(2.75rem, 15vw, 4.8rem);
+  left: 50%;
+  line-height: 1;
+  position: absolute;
+  transform: translate3d(var(--start), 0, 0);
+  user-select: none;
+  will-change: transform, opacity;
+}
+
+.launched-emoji-glyph {
+  animation: emoji-sway 0.8s ease-in-out infinite alternate;
+  display: block;
+  filter: drop-shadow(0 14px 14px rgb(15 23 42 / 0.16));
+  will-change: transform;
+}
