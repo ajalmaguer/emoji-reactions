@@ -1,7 +1,13 @@
 import EmojiPicker from 'emoji-picker-react';
 import { resetReactions } from './db';
 
-const DEFAULT_REACTIONS = ['1f680', '1f331', '1f9e9', '1f914', '1f64b'];
+const DEFAULT_REACTIONS = [
+  '1f422',
+  '1f9d1-200d-1f680',
+  '1f680',
+  '1f916',
+  '1f973',
+];
 
 function App() {
   const totalReactions = 0;
@@ -50,6 +56,7 @@ function App() {
           onReactionClick={handleReactionClick}
           reactions={DEFAULT_REACTIONS}
           reactionsDefaultOpen
+          allowExpandReactions={false}
         />
       </section>
     </main>
