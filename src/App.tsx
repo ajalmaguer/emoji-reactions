@@ -244,10 +244,10 @@ function App() {
   }
 
   return (
-    <main className="relative flex min-h-screen overflow-hidden bg-[#f8fafc] text-slate-950">
+    <main className="relative flex min-h-[100svh] overflow-hidden bg-[#f8fafc] text-slate-950">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(14,165,233,0.16),transparent_34%),linear-gradient(180deg,#ffffff_0%,#eff6ff_100%)]" />
 
-      <section className="relative flex min-h-screen w-full max-w-md flex-col items-center justify-end px-5 pb-10">
+      <section className="relative flex min-h-[100svh] w-full max-w-md flex-col items-center justify-end px-5 pb-10">
         <div className="reaction-meter" aria-live="polite">
           <div className="reaction-meter-header">
             <span>Live reactions</span>
