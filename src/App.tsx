@@ -5,7 +5,8 @@ import { hasSupabaseConfig, supabase } from './supabaseClient';
 
 const FLOAT_DURATION_MS = 1800;
 const PICKER_COLLAPSE_DURATION_MS = 320;
-const DEFAULT_REACTIONS = ['1f44d', '2764-fe0f', '1f603', '1f622', '1f64f'];
+// const DEFAULT_REACTIONS = ['1f7e2', '1f7e1', '1f534', '1f914', '1f64b'];
+const DEFAULT_REACTIONS = ['1f680', '1f331', '1f9e9', '1f914', '1f64b'];
 
 type Launch = {
   emoji: string;
