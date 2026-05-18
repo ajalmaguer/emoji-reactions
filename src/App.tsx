@@ -153,27 +153,27 @@ function App() {
     });
   }
 
-  async function resetReactions() {
-    if (!supabase) {
-      setReactionCounts({});
-      return;
-    }
+  // async function resetReactions() {
+  //   if (!supabase) {
+  //     setReactionCounts({});
+  //     return;
+  //   }
 
-    const { error } = await supabase.rpc('reset_reaction_counts');
+  //   const { error } = await supabase.rpc('reset_reaction_counts');
 
-    if (error) {
-      console.error('Unable to reset reactions', error);
-      return;
-    }
+  //   if (error) {
+  //     console.error('Unable to reset reactions', error);
+  //     return;
+  //   }
 
-    setReactionCounts({});
-  }
+  //   setReactionCounts({});
+  // }
 
-  function handleResetReactions() {
-    resetReactions().catch((error: unknown) => {
-      console.error('Unable to reset reactions', error);
-    });
-  }
+  // function handleResetReactions() {
+  //   resetReactions().catch((error: unknown) => {
+  //     console.error('Unable to reset reactions', error);
+  //   });
+  // }
 
   function handleReactionClick(emojiData: EmojiClickData) {
     handleReaction(emojiData.emoji);
