@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "deploy": "gh-pages -d dist",
-    "deploy:full": "npm run build && gh-pages -d dist",
+    "deploy": "GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=http.sslcainfo GIT_CONFIG_VALUE_0=$PWD/.git/info/git-ca-bundle.pem GIT_CONFIG_KEY_1=http.sslVersion GIT_CONFIG_VALUE_1=tlsv1.2 gh-pages -d dist",
+    "deploy:full": "npm run build && npm run deploy",
     "lint": "eslint .",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
