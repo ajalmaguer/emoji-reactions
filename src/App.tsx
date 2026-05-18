@@ -210,13 +210,13 @@ function App() {
           <div className="reaction-meter-header">
             <span>Live reactions</span>
             <div className="reaction-meter-actions">
-              <button
+              {/* <button
                 className="reaction-reset-button"
                 onClick={handleResetReactions}
                 type="button"
               >
                 Reset
-              </button>
+              </button> */}
               <strong>{totalReactions}</strong>
             </div>
           </div>
