@@ -1,9 +1,36 @@
 import EmojiPicker from 'emoji-picker-react';
-import { resetReactions } from './db';
+import { listenToChanges, resetReactions } from './db';
+import { useEffect, useState } from 'react';
+import { Reaction, type ReactionType } from './Reaction';
 
 const DEFAULT_REACTIONS = ['1f680', '1f331', '1f9e9', '1f914', '1f64b'];
 
 function App() {
+  const [reactions, setReactions] = useState<ReactionType[]>([]);
+
+  function addReaction(emoji: string) {
+    const id = crypto.randomUUID();
+
+    const start = Math.round(Math.random() * 350 - 200);
+
+    const newReaction = {
+      id,
+      emoji,
+      start: start,
+    };
+    console.log('adding reaction ', newReaction);
+
+    setReactions((currentReactions) => [...currentReactions, newReaction]);
+  }
+
+  useEffect(() => {
+    console.log('on mount');
+    const listener = listenToChanges((payload) => {
+      addReaction(payload.new.emoji);
+    });
+
+    return listener;
+  }, []);
   const totalReactions = 0;
 
   function handleEmojiClick() {
@@ -42,7 +69,16 @@ function App() {
         </div>
 
         <div className="launch-field" aria-hidden="true">
-          launches go here
+          {reactions.map((reaction) => {
+            return (
+              <Reaction
+                key={reaction.id}
+                id={reaction.id}
+                emoji={reaction.emoji}
+                start={reaction.start}
+              />
+            );
+          })}
         </div>
 
         <EmojiPicker
