@@ -1,5 +1,5 @@
 import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Tables } from './database.types';
 import { hasSupabaseConfig, supabase } from './supabaseClient';
 
@@ -22,6 +22,7 @@ function App() {
   const [reactionCounts, setReactionCounts] = useState<Record<string, number>>(
     {},
   );
+  const pendingLocalReactions = useRef<Record<string, number>>({});
   const [customReaction, setCustomReaction] = useState<string | null>(null);
   const [pickerKey, setPickerKey] = useState('default-reactions');
   const reactions = customReaction
@@ -40,6 +41,22 @@ function App() {
       Object.values(reactionCounts).reduce((total, count) => total + count, 0),
     [reactionCounts],
   );
+
+  function launchEmoji(emoji: string) {
+    const id = crypto.randomUUID();
+    const sway = Math.round(Math.random() * 18 + 28);
+    const start = Math.round(Math.random() * 44 - 22);
+
+    setLaunches((currentLaunches) => [
+      ...currentLaunches,
+      { emoji, id, start, sway },
+    ]);
+    window.setTimeout(() => {
+      setLaunches((currentLaunches) =>
+        currentLaunches.filter((launch) => launch.id !== id),
+      );
+    }, FLOAT_DURATION_MS);
+  }
 
   useEffect(() => {
     if (!supabase) {
@@ -72,26 +89,45 @@ function App() {
       console.error('Unable to load reaction counts', error);
     });
 
+    function shouldSkipLaunchForLocalReaction(emoji: string) {
+      const pendingCount = pendingLocalReactions.current[emoji] ?? 0;
+
+      if (pendingCount === 0) {
+        return false;
+      }
+
+      pendingLocalReactions.current = {
+        ...pendingLocalReactions.current,
+        [emoji]: pendingCount - 1,
+      };
+      return true;
+    }
+
+    function handleReactionCountChange({ count, emoji }: ReactionCountRow) {
+      if (!shouldSkipLaunchForLocalReaction(emoji)) {
+        launchEmoji(emoji);
+      }
+
+      setReactionCounts((currentCounts) => ({
+        ...currentCounts,
+        [emoji]: count,
+      }));
+    }
+
     const channel = supabaseClient
       .channel('reaction-counts')
       .on<ReactionCountRow>(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'reaction_counts' },
         (payload) => {
-          setReactionCounts((currentCounts) => ({
-            ...currentCounts,
-            [payload.new.emoji]: payload.new.count,
-          }));
+          handleReactionCountChange(payload.new);
         },
       )
       .on<ReactionCountRow>(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'reaction_counts' },
         (payload) => {
-          setReactionCounts((currentCounts) => ({
-            ...currentCounts,
-            [payload.new.emoji]: payload.new.count,
-          }));
+          handleReactionCountChange(payload.new);
         },
       )
       .subscribe();
@@ -103,22 +139,6 @@ function App() {
       });
     };
   }, []);
-
-  function launchEmoji(emoji: string) {
-    const id = crypto.randomUUID();
-    const sway = Math.round(Math.random() * 18 + 28);
-    const start = Math.round(Math.random() * 44 - 22);
-
-    setLaunches((currentLaunches) => [
-      ...currentLaunches,
-      { emoji, id, start, sway },
-    ]);
-    window.setTimeout(() => {
-      setLaunches((currentLaunches) =>
-        currentLaunches.filter((launch) => launch.id !== id),
-      );
-    }, FLOAT_DURATION_MS);
-  }
 
   async function countReaction(emoji: string) {
     if (!supabase) {
@@ -135,6 +155,15 @@ function App() {
 
     if (error) {
       console.error('Unable to count reaction', error);
+      const pendingCount = pendingLocalReactions.current[emoji] ?? 0;
+
+      if (pendingCount > 0) {
+        pendingLocalReactions.current = {
+          ...pendingLocalReactions.current,
+          [emoji]: pendingCount - 1,
+        };
+      }
+
       return;
     }
 
@@ -147,6 +176,13 @@ function App() {
   }
 
   function handleReaction(emoji: string) {
+    if (supabase) {
+      pendingLocalReactions.current = {
+        ...pendingLocalReactions.current,
+        [emoji]: (pendingLocalReactions.current[emoji] ?? 0) + 1,
+      };
+    }
+
     launchEmoji(emoji);
     countReaction(emoji).catch((error: unknown) => {
       console.error('Unable to count reaction', error);
