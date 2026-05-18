@@ -12,7 +12,9 @@ export async function loadData() {
   return await supabase.from('reaction_counts').select('emoji, count');
 }
 
-export function listenToChanges(callback: (payload: unknown) => void) {
+export function listenToChanges(
+  callback: (payload: { new: ReactionCountRow }) => void,
+) {
   if (!supabase) {
     console.warn(
       'Supabase client is not configured. Unable to listen to changes.',
