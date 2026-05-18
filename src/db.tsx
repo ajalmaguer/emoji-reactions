@@ -19,7 +19,7 @@ export function listenToChanges(
     console.warn(
       'Supabase client is not configured. Unable to listen to changes.',
     );
-    return null;
+    return () => {};
   }
 
   const channel = supabase
