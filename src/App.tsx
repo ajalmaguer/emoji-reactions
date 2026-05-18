@@ -11,8 +11,13 @@ import { hasSupabaseConfig, supabase } from './supabaseClient';
 
 const FLOAT_DURATION_MS = 1800;
 const PICKER_COLLAPSE_DURATION_MS = 320;
-// const DEFAULT_REACTIONS = ['1f7e2', '1f7e1', '1f534', '1f914', '1f64b'];
-const DEFAULT_REACTIONS = ['1f680', '1f331', '1f9e9', '1f914', '1f64b'];
+const DEFAULT_REACTIONS = [
+  '1f422',
+  '1f9d1-200d-1f680',
+  '1f680',
+  '1f916',
+  '1f973',
+];
 
 type Launch = {
   emoji: string;
@@ -317,6 +322,7 @@ function App() {
           onReactionClick={handleReactionClick}
           reactions={reactions}
           reactionsDefaultOpen
+          allowExpandReactions={false}
         />
       </section>
     </main>
