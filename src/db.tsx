@@ -34,7 +34,9 @@ export function listenToChanges(
     .on<ReactionCountRow>(
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'reaction_counts' },
-      callback,
+      (payload) => {
+        callback(payload);
+      },
     )
     .subscribe();
 
