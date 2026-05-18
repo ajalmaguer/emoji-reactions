@@ -1,5 +1,11 @@
 import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import type { Tables } from './database.types';
 import { hasSupabaseConfig, supabase } from './supabaseClient';
 
@@ -189,27 +195,27 @@ function App() {
     });
   }
 
-  // async function resetReactions() {
-  //   if (!supabase) {
-  //     setReactionCounts({});
-  //     return;
-  //   }
+  async function resetReactions() {
+    if (!supabase) {
+      setReactionCounts({});
+      return;
+    }
 
-  //   const { error } = await supabase.rpc('reset_reaction_counts');
+    const { error } = await supabase.rpc('reset_reaction_counts');
 
-  //   if (error) {
-  //     console.error('Unable to reset reactions', error);
-  //     return;
-  //   }
+    if (error) {
+      console.error('Unable to reset reactions', error);
+      return;
+    }
 
-  //   setReactionCounts({});
-  // }
+    setReactionCounts({});
+  }
 
-  // function handleResetReactions() {
-  //   resetReactions().catch((error: unknown) => {
-  //     console.error('Unable to reset reactions', error);
-  //   });
-  // }
+  function handleResetReactions() {
+    resetReactions().catch((error: unknown) => {
+      console.error('Unable to reset reactions', error);
+    });
+  }
 
   function handleReactionClick(emojiData: EmojiClickData) {
     handleReaction(emojiData.emoji);
@@ -246,13 +252,13 @@ function App() {
           <div className="reaction-meter-header">
             <span>Live reactions</span>
             <div className="reaction-meter-actions">
-              {/* <button
+              <button
                 className="reaction-reset-button"
                 onClick={handleResetReactions}
                 type="button"
               >
                 Reset
-              </button> */}
+              </button>
               <strong>{totalReactions}</strong>
             </div>
           </div>
