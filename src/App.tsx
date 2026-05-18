@@ -1,5 +1,6 @@
 import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import type { Tables } from './database.types';
 import { hasSupabaseConfig, supabase } from './supabaseClient';
 
 const FLOAT_DURATION_MS = 1800;
@@ -13,10 +14,7 @@ type Launch = {
   start: number;
 };
 
-type ReactionCountRow = {
-  count: number;
-  emoji: string;
-};
+type ReactionCountRow = Tables<'reaction_counts'>;
 
 function App() {
   const [launches, setLaunches] = useState<Launch[]>([]);
@@ -65,12 +63,7 @@ function App() {
       }
 
       setReactionCounts(
-        Object.fromEntries(
-          (data as ReactionCountRow[]).map(({ emoji, count }) => [
-            emoji,
-            count,
-          ]),
-        ),
+        Object.fromEntries(data.map(({ emoji, count }) => [emoji, count])),
       );
     }
 
@@ -80,15 +73,23 @@ function App() {
 
     const channel = supabaseClient
       .channel('reaction-counts')
-      .on(
+      .on<ReactionCountRow>(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'reaction_counts' },
+        { event: 'INSERT', schema: 'public', table: 'reaction_counts' },
         (payload) => {
-          const updatedReaction = payload.new as ReactionCountRow;
-
           setReactionCounts((currentCounts) => ({
             ...currentCounts,
-            [updatedReaction.emoji]: updatedReaction.count,
+            [payload.new.emoji]: payload.new.count,
+          }));
+        },
+      )
+      .on<ReactionCountRow>(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'reaction_counts' },
+        (payload) => {
+          setReactionCounts((currentCounts) => ({
+            ...currentCounts,
+            [payload.new.emoji]: payload.new.count,
           }));
         },
       )

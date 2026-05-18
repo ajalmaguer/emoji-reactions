@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
+    "supabase:types": "set -a; . ./.env.supabase.local; set +a; npx supabase gen types typescript --project-id lrvzumjsdtmwlfepitqu > src/database.types.ts",
     "preview": "vite preview"
   },
   "dependencies": {
