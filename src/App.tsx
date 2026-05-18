@@ -1,10 +1,44 @@
 import EmojiPicker from 'emoji-picker-react';
-import { resetReactions } from './db';
+import { listenToChanges, resetReactions } from './db';
+import { useEffect, useState, type CSSProperties } from 'react';
 
 const DEFAULT_REACTIONS = ['1f680', '1f331', '1f9e9', '1f914', '1f64b'];
 
+type Reaction = { id: string; emoji: string; sway: number; start: number };
+
 function App() {
   const totalReactions = 0;
+
+  const [reactions, setReactions] = useState<Reaction[]>([]);
+
+  function addReaction(emoji: string) {
+    const id = crypto.randomUUID();
+    const sway = Math.round(Math.random() * 18 + 28);
+    const start = Math.round(Math.random() * 44 - 22);
+
+    setReactions((currentReactions) => [
+      ...currentReactions,
+      { emoji, id, start, sway },
+    ]);
+  }
+
+  useEffect(() => {
+    console.log('mounted');
+    const cleanup = listenToChanges((payload) => {
+      console.log('reaction count changed', payload.new);
+      const newEmoji = payload.new.emoji;
+      console.log('newEmoji =', newEmoji);
+      addReaction(newEmoji);
+    });
+
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, []);
+
+  console.log('emojis = ', reactions);
 
   function handleEmojiClick() {
     console.log('handleEmojiClick');
@@ -42,7 +76,22 @@ function App() {
         </div>
 
         <div className="launch-field" aria-hidden="true">
-          launches go here
+          {reactions.map((reaction) => {
+            return (
+              <span
+                className="launched-emoji"
+                key={reaction.id}
+                style={
+                  {
+                    '--sway': `${reaction.sway}px`,
+                    '--start': `${reaction.start}px`,
+                  } as CSSProperties
+                }
+              >
+                <span className="launched-emoji-glyph">{reaction.emoji}</span>
+              </span>
+            );
+          })}
         </div>
 
         <EmojiPicker

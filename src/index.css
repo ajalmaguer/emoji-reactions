@@ -30,12 +30,6 @@
   }
 }
 
-.launch-field {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
 .reaction-meter {
   align-self: stretch;
   background: rgb(255 255 255 / 0.82);
@@ -151,4 +145,40 @@
   display: block;
   filter: drop-shadow(0 14px 14px rgb(15 23 42 / 0.16));
   will-change: transform;
+}
+/* demo below
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+------
+*/
+
+.emoji {
+  position: absolute;
+  border: 1px solid red;
+  bottom: 0;
+  animation: emoji-float 2s linear forwards;
+  /* transform: translate3d(var(--start), 0, 0); */
 }
