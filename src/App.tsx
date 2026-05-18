@@ -1,5 +1,5 @@
 function App() {
-  return <div>hello world</div>
+  return <main className="min-h-screen bg-white text-slate-950" />
 }
 
 export default App
