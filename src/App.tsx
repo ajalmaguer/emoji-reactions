@@ -1,5 +1,6 @@
 import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { hasSupabaseConfig, supabase } from './supabaseClient';
 
 const FLOAT_DURATION_MS = 1800;
 const PICKER_COLLAPSE_DURATION_MS = 320;
@@ -12,13 +13,94 @@ type Launch = {
   start: number;
 };
 
+type ReactionCountRow = {
+  count: number;
+  emoji: string;
+};
+
 function App() {
   const [launches, setLaunches] = useState<Launch[]>([]);
+  const [reactionCounts, setReactionCounts] = useState<Record<string, number>>(
+    {},
+  );
   const [customReaction, setCustomReaction] = useState<string | null>(null);
   const [pickerKey, setPickerKey] = useState('default-reactions');
   const reactions = customReaction
     ? [...DEFAULT_REACTIONS, customReaction]
     : DEFAULT_REACTIONS;
+  const topReactions = useMemo(
+    () =>
+      Object.entries(reactionCounts)
+        .filter(([, count]) => count > 0)
+        .sort(([, firstCount], [, secondCount]) => secondCount - firstCount)
+        .slice(0, 6),
+    [reactionCounts],
+  );
+  const totalReactions = useMemo(
+    () =>
+      Object.values(reactionCounts).reduce((total, count) => total + count, 0),
+    [reactionCounts],
+  );
+
+  useEffect(() => {
+    if (!supabase) {
+      return undefined;
+    }
+
+    const supabaseClient = supabase;
+    let isSubscribed = true;
+
+    async function loadReactionCounts() {
+      const { data, error } = await supabaseClient
+        .from('reaction_counts')
+        .select('emoji, count');
+
+      if (error) {
+        console.error('Unable to load reaction counts', error);
+        return;
+      }
+
+      if (!isSubscribed) {
+        return;
+      }
+
+      setReactionCounts(
+        Object.fromEntries(
+          (data as ReactionCountRow[]).map(({ emoji, count }) => [
+            emoji,
+            count,
+          ]),
+        ),
+      );
+    }
+
+    loadReactionCounts().catch((error: unknown) => {
+      console.error('Unable to load reaction counts', error);
+    });
+
+    const channel = supabaseClient
+      .channel('reaction-counts')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reaction_counts' },
+        (payload) => {
+          const updatedReaction = payload.new as ReactionCountRow;
+
+          setReactionCounts((currentCounts) => ({
+            ...currentCounts,
+            [updatedReaction.emoji]: updatedReaction.count,
+          }));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      isSubscribed = false;
+      supabaseClient.removeChannel(channel).catch((error: unknown) => {
+        console.error('Unable to remove reaction count channel', error);
+      });
+    };
+  }, []);
 
   function launchEmoji(emoji: string) {
     const id = crypto.randomUUID();
@@ -36,8 +118,63 @@ function App() {
     }, FLOAT_DURATION_MS);
   }
 
+  async function countReaction(emoji: string) {
+    if (!supabase) {
+      setReactionCounts((currentCounts) => ({
+        ...currentCounts,
+        [emoji]: (currentCounts[emoji] ?? 0) + 1,
+      }));
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('increment_reaction_count', {
+      reaction_emoji: emoji,
+    });
+
+    if (error) {
+      console.error('Unable to count reaction', error);
+      return;
+    }
+
+    if (typeof data === 'number') {
+      setReactionCounts((currentCounts) => ({
+        ...currentCounts,
+        [emoji]: data,
+      }));
+    }
+  }
+
+  function handleReaction(emoji: string) {
+    launchEmoji(emoji);
+    countReaction(emoji).catch((error: unknown) => {
+      console.error('Unable to count reaction', error);
+    });
+  }
+
+  async function resetReactions() {
+    if (!supabase) {
+      setReactionCounts({});
+      return;
+    }
+
+    const { error } = await supabase.rpc('reset_reaction_counts');
+
+    if (error) {
+      console.error('Unable to reset reactions', error);
+      return;
+    }
+
+    setReactionCounts({});
+  }
+
+  function handleResetReactions() {
+    resetReactions().catch((error: unknown) => {
+      console.error('Unable to reset reactions', error);
+    });
+  }
+
   function handleReactionClick(emojiData: EmojiClickData) {
-    launchEmoji(emojiData.emoji);
+    handleReaction(emojiData.emoji);
   }
 
   function setLastCustomReaction(emojiUnifiedString: string) {
@@ -53,7 +190,7 @@ function App() {
     _event: MouseEvent,
     api?: { collapseToReactions: () => void },
   ) {
-    launchEmoji(emojiData.emoji);
+    handleReaction(emojiData.emoji);
     setLastCustomReaction(emojiData.unified);
     api?.collapseToReactions();
 
@@ -67,6 +204,52 @@ function App() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(14,165,233,0.16),transparent_34%),linear-gradient(180deg,#ffffff_0%,#eff6ff_100%)]" />
 
       <section className="relative flex min-h-screen w-full max-w-md flex-col items-center justify-end px-5 pb-10">
+        <div className="reaction-meter" aria-live="polite">
+          <div className="reaction-meter-header">
+            <span>Live reactions</span>
+            <div className="reaction-meter-actions">
+              <button
+                className="reaction-reset-button"
+                onClick={handleResetReactions}
+                type="button"
+              >
+                Reset
+              </button>
+              <strong>{totalReactions}</strong>
+            </div>
+          </div>
+
+          <div className="reaction-meter-list">
+            {topReactions.length > 0 ? (
+              topReactions.map(([emoji, count]) => {
+                const width =
+                  totalReactions > 0
+                    ? Math.max((count / totalReactions) * 100, 8)
+                    : 8;
+
+                return (
+                  <div className="reaction-meter-row" key={emoji}>
+                    <span className="reaction-meter-emoji">{emoji}</span>
+                    <span className="reaction-meter-track">
+                      <span
+                        className="reaction-meter-fill"
+                        style={{ width: `${width}%` }}
+                      />
+                    </span>
+                    <strong>{count}</strong>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="reaction-meter-empty">
+                {hasSupabaseConfig
+                  ? 'Waiting for the first reaction'
+                  : 'Local counts until Supabase is configured'}
+              </p>
+            )}
+          </div>
+        </div>
+
         <div className="launch-field" aria-hidden="true">
           {launches.map((launch) => (
             <span
